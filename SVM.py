@@ -4,41 +4,57 @@ Created on Mar 5, 2016
 @author: Ben
 '''
 import numpy as np
-import matplotlib.pyplot as pl
+import matplotlib.pyplot as plt
 import mltools as ml
+from sklearn.svm import SVR
 
-X1=np.genfromtxt("data/kaggle.X1.train.txt", delimiter = ",")
-Y=np.genfromtxt("data/kaggle.Y.train.txt", delimiter = ",")
-Xtr,Xte,Ytr,Yte = ml.splitData(X1,Y,0.75)
+#WARNING: this takes a long time to run with the kaggle training data
 
-#Ihler's code for soft margin linear SVM - which might be useful to play around with
-#not prepared for the data
+#X1=np.genfromtxt("data/kaggle.X1.train.txt", delimiter = ",")
+#Y=np.genfromtxt("data/kaggle.Y.train.txt", delimiter = ",")
+#Xtr,Xte,Ytr,Yte = ml.splitData(X1,Y,0.75)
+#Kaggle testing data
+#Xe1 = np.genfromtxt("data/kaggle.X1.test.txt", delimiter=",")
 
-class linearSVM(ml.classifier):
-    def predict(self, X):
-        Z = self.theta[:,0].T + X.dot( self.theta[:,1:].T )
-        Yhat = 2*(Z>0)-1  # np.sign(Z) without sign(0)=0
-        return Yhat
+data = np.genfromtxt("data/curve80.txt", delimiter=None)
+X = data[:, 0]
+X = X[:, np.newaxis]
+Y = data[:, 1]
+Xtr, Xte, Ytr, Yte = ml.splitData(X, Y, 0.75)
 
-sv = linearSVM()
 
-from numpy import atleast_2d as twod
-from numpy import asarray as arr
+#Training and predicting with the SVM
+svr_rbf = SVR(kernel='rbf', C=1e3, gamma=0.1)
+Ye = svr_rbf.fit(Xtr, Ytr).predict(Xte)
+#Ye = [4, 8.5, 15, 2, 10]
+#Yte = [5, 8, 10, 2, 11]
 
-M,N = X.shape
-sv.theta = np.array([[-3,-1,.5]])
+def SVMMSE(Y, Yhat):
+    error = 0
+    for i in range(len(Y)):
+        error += (Y[i] - Yhat[i])**2
+    return error / len(Y)
 
-alpha = 0.01
-reg = 1e-4
-for it in range(1000):   # 100 iterations:
-    for j in range(M):
-        zj = sv.theta[0,0]+twod(X[j,:]).dot(sv.theta[0,1:].T)  # compute linear response
-        #print zj
-        # Now, compute the gradient of the hinge loss:
-        gradj = 0 if zj*Y[j] > 1.0 else -Y[j]*arr([[1,X[j,0],X[j,1]]])
-        # plus the gradient of the L2 regularization term:
-        gradj += reg * sv.theta
-        # and update theta:
-        sv.theta -= alpha/(it+1) * gradj
-    if it<10: print "Error rate: {} \t(iter {})".format(sv.err(X,Y),it)
-print "...\nTheta:",sv.theta
+currentMSE = SVMMSE(Yte, Ye)
+
+print currentMSE
+
+#for writing the things to kaggle
+#svr_rbf = SVR(kernel='rbf', C=1e3, gamma=0.1)
+#Ye = svr_rbf.fit(X1, Y).predict(Xe1)
+#Ye = Ye.ravel()
+    
+#fh = open('predictions.csv','w')    # open file for upload
+#fh.write('ID,Prediction\n')         # output header line
+#for i,yi in enumerate(Ye):
+#  fh.write('{},{}\n'.format(i+1,yi)) # output each prediction
+#fh.close()                          # close the file
+
+#There's three different kind of SVR according to sklearn: SVR, NuSVR, and LinearSVR
+#They are all based on libSVM.
+
+#In SVR, there are five built-in kernels: rbf, linear, poly, sigmoid, or precomputed.
+#Precomputed requires different parameters rather than just changing the parameter for kernel
+#With this default code below, which I ran with rbf, I got 0.83858, which is kinda bad.
+
+#We can also play around with C, gamma, and the other parameters in SVR
