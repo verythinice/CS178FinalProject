@@ -22,14 +22,8 @@ Xtr,Xte,Ytr,Yte = ml.splitData(X1[:200],Y[:200],0.75)
 #Kaggle testing data
 Xe1 = np.genfromtxt("data/kaggle.X1.test.txt", delimiter=",")
 
-# data = np.genfromtxt("data/curve80.txt", delimiter=None)
-# X = data[:, 0]
-# X = X[:, np.newaxis]
-# Y = data[:, 1]
-# Xtr, Xte, Ytr, Yte = ml.splitData(X, Y, 0.75)
-
-
 # #Training and predicting with the SVM
+# #This block was used to test parameters
 # kernelTypes = ['linear', 'poly', 'rbf', 'sigmoid', 'precomputed']
 # for i in range(1,10):
 #     svr_rbf = SVR(kernel='rbf', C=1e3, gamma=(10**(-10)), epsilon = i*(10**(-1)))
@@ -53,12 +47,3 @@ fh.write('ID,Prediction\n')         # output header line
 for i,yi in enumerate(Ye):
     fh.write('{},{}\n'.format(i+1,yi)) # output each prediction
 fh.close()                          # close the file
-
-#There's three different kind of SVR according to sklearn: SVR, NuSVR, and LinearSVR
-#They are all based on libSVM.
-
-#In SVR, there are five built-in kernels: rbf, linear, poly, sigmoid, or precomputed.
-#Precomputed requires different parameters rather than just changing the parameter for kernel
-#With this default code below, which I ran with rbf, I got 0.83858, which is kinda bad.
-
-#We can also play around with C, gamma, and the other parameters in SVR
